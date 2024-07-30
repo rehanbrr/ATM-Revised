@@ -15,10 +15,7 @@ module Validation
   end
 
   def pin_valid?(pin)
-    if pin.match?(/^\d{4}$/)
-      return true
-    end
-
-    return false
+    pin.match?(/^\d{4}$/)   
   end
+  
 end

@@ -1,49 +1,36 @@
 require_relative 'user'
 require_relative 'account'
-
+require 'CSV'
 class FileSystem
 
   attr_accessor :user_data, :account_data
 
   def load_user_data
     file_name = 'users.csv'
-    if File.exist?(file_name)
-      user_data = File.open(file_name, 'r').readlines
-      @user_data = {}
+    return File.new(file_name, 'w+') if !File.exist?(file_name)
 
-      for user_line in user_data
-        user_params = user_line.split(',')
-        user = User.new(user_params[0], user_params[1], user_params[2])
-        @user_data[user.email] = user
-      end
-
-    else
-
-      File.new(file_name, 'w+')
+    user_data = CSV.open(file_name, 'r').readlines
+    puts "user data csv: #{user_data}"
+    @user_data = user_data.inject({}) do |hash, user_params|
+      user = User.new(user_params[0], user_params[1], user_params[2])
+      hash[user.email] = user
+      hash
     end
 
   end
 
   def load_account_data
     file_name = 'accounts.csv'
-  
-    if File.exist?(file_name)
-      account_data = File.open(file_name, 'r').readlines
-      @account_data = {}
-  
-      account_data.each do |account_line|
-        account_params = account_line.split(',')
-        account = Account.new(account_params[0], account_params[1])
-        account.balance = account_params[2]
-        
-        if @account_data.key?(account.email)
-          @account_data[account.email] << account
-        else
-          @account_data[account.email] = [account]
-        end
-      end
-    else
-      File.new(file_name, 'w+')
+    return File.new(file_name, 'w+') if !File.exist?(file_name)
+
+    account_data = CSV.open(file_name, 'r').readlines
+    puts "CSV data: #{account_data}"
+    @account_data = account_data.inject({}) do |hash, account_params|
+      account = Account.new(account_params[0], account_params[1])
+      account.balance = account_params[2]
+      hash[account.email] ||= []
+      hash[account.email] << account
+      hash
     end
   end
   

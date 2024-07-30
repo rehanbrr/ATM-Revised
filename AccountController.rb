@@ -21,19 +21,27 @@ module AccountController
   end
 
   def add_account(account)
-    if @account_data.key?(account.email)
+    if @account_data[account.email]
       @account_data[account.email] << account
     else
       @account_data[account.email] = [account]
     end
-
-    puts "account data after adding: #{@account_data}"
   end
 
   def create_account_and_add(pin, email)
     puts "pin in adding: #{pin}"
     account = create_account(pin, email)
     add_account(account)
+  end
+
+  def validate_user(account)
+    user_accounts = find_user_accounts(account.email)
+    user_accounts.select {|user_account| account.pin == user_account.pin}
+  end
+
+  def pin_existence?(pin, email)
+    accounts = find_user_accounts(email)
+    accounts.detect {|account| account.pin == pin} if accounts
   end
 
   def find_user_accounts(email)

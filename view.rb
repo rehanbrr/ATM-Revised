@@ -8,7 +8,7 @@ class Machine
   def start
     start_user_controller
     start_account_controller
-    puts 'Welcome to ATM'
+    puts "\n\nWelcome to ATM"
     start_menu
     puts 'Goodbye!'
   end
@@ -67,11 +67,7 @@ class Machine
       break if break_condition(validity, option)
     end
   
-    if option == 'createuser'
-      return name, email, password
-    else
-      return email, password
-    end
+    option == 'createuser' ? [name, email, password] : [email, password]
   end
 
   def check_validitiy(valid_name, valid_email, valid_password)
@@ -79,12 +75,7 @@ class Machine
   end
   
   def break_condition(validity, option)
-    if option == 'createuser' && validity || option == 'login'
-      return true
-    else
-      return false
-    end
-
+    return option == 'createuser' && validity || option == 'login'
   end
 
   def get_account_params
@@ -95,6 +86,8 @@ class Machine
       
       break if pin_valid?(pin)
     end
+
+    pin
   end
   
   def start_menu
@@ -125,9 +118,42 @@ class Machine
     end
   end
 
+  def view_account_details(account)
+    puts "\n\nAccount details for #{account.pin}"
+  end
+
+  def view_accounts
+    puts "\n\nAccount List"
+    accounts = find_user_accounts(@user.email)
+    return puts "No accounts available" if !accounts
+
+    loop do
+      accounts.each.with_index do |account, index|
+        pin_digits = account.pin.match(/\d{2}$/)
+        puts "#{index + 1}. Account with PIN ending with #{pin_digits[0]}"
+      end
+      puts "0. Exit Menu"
+
+      choice = gets.chomp.to_i - 1
+
+      next if choice > accounts.size
+
+      case choice
+      when -1
+        break
+      else
+        account = accounts[choice]
+        account_valid = validate_user(account)
+        puts "Incorrect PIN" if !account_valid
+        view_account_details(account) if account_valid
+      end
+    end
+  end
+
   def select_account_menu
     
     loop do
+      puts "\n\nChoose an option: "
       puts '1. Create Account'
       puts '2. View Accounts'
       puts '3. Logout'
@@ -137,14 +163,9 @@ class Machine
       case choice
       when 1 
         pin = get_account_params
-        create_account_and_add(pin, @user.email)
+        create_account_and_add(pin, @user.email) if !pin_existence?(pin, @user.email)
       when 2
-        accounts = find_user_accounts(@user.email)
-        puts "accounts for email: #{accounts}"
-        accounts.each.with_index do |account, index|
-          pin_digits = account.pin.match(/\d{2}$/)
-          puts "#{index + 1}. Account with PIN ending with #{pin_digits[0]}"
-        end
+        view_accounts
       when 3
         break
       end

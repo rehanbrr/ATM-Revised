@@ -35,12 +35,7 @@ module UserController
     add_user(user)
   end
 
-  def validate_user(user)
-    return true if !user.nil?
-  end
-
   def login_user(email, password)
-    @user = @user_data[email] if @user_data.key?(email)
-    return @user if validate_user(@user)
+    @user = @user_data[email] if @user_data[email].password == password
   end
 end
