@@ -38,7 +38,7 @@ class Machine
         name = gets.chomp
         valid_name = name_valid?(name)
 
-        if valid_name == false
+        if valid_name != true
           puts 'Name should be more than 3 letters. Try again'
           next
         end
@@ -47,9 +47,9 @@ class Machine
   
       puts 'Enter email:'
       email = gets.chomp
-      valid_email = !email_valid?(email) if option == 'createuser'
+      valid_email = email_valid?(email) if option == 'createuser'
 
-      if valid_email == false
+      if valid_email != true
         puts 'Email has to be unique and should contain .com and @. Try again'
         next
       end
@@ -58,15 +58,13 @@ class Machine
       password = gets.chomp
       valid_password = password_valid?(password)
 
-      if valid_password == false
+      if valid_password != true
         puts 'Password should me more than 8 character. Should contain numbers. Try again'
         next
       end
-  
-      puts valid_email
-      puts valid_name
-      puts valid_password
-      break if break_condition(valid_name, valid_email, valid_password, option)
+
+      validity = check_validitiy(valid_name, valid_email, valid_password)
+      break if break_condition(validity, option)
     end
   
     if option == 'createuser'
@@ -75,19 +73,28 @@ class Machine
       return email, password
     end
   end
-  
-  def break_condition(valid_name, valid_email, valid_password, option)
-    if option == 'createuser'
-      if(valid_name == true && valid_email == true && valid_password == true)
-        return true
-      else
-        return false
-      end
 
-    elsif option == 'login'
+  def check_validitiy(valid_name, valid_email, valid_password)
+    valid_name == true && valid_email == true && valid_password == true
+  end
+  
+  def break_condition(validity, option)
+    if option == 'createuser' && validity || option == 'login'
       return true
+    else
+      return false
     end
 
+  end
+
+  def get_account_params
+    pin = ''
+    loop do
+      puts 'Enter PIN (4 Digits)'
+      pin = gets.chomp
+      
+      break if pin_valid?(pin)
+    end
   end
   
   def start_menu
@@ -106,22 +113,15 @@ class Machine
         create_and_add_user(name, email, password)
       when 2
         email, password = get_user_params('login')
-        user = user if login_user(email, password) == true
+        @user = login_user(email, password)
+
+        puts 'Login credentials incorrect' if !@user
+        select_account_menu if @user
       when 3
         close_app
         break
       end
   
-    end
-  end
-
-  def get_account_params
-    pin = ''
-    loop do
-      puts 'Enter PIN (4 Digits)'
-      pin = gets.chomp.to_i
-      
-      break if pin_valid?(pin)
     end
   end
 
@@ -136,14 +136,13 @@ class Machine
 
       case choice
       when 1 
-        pin, email = get_account_params
-        create_account(pin, email)
+        pin = get_account_params
+        create_account_and_add(pin, @user.email)
       when 2
-        email = get_current_email
-        accounts = find_user_accounts(email)
-
+        accounts = find_user_accounts(@user.email)
+        puts "accounts for email: #{accounts}"
         accounts.each.with_index do |account, index|
-          pin_digits = pin.match(/\d{2}$/)
+          pin_digits = account.pin.match(/\d{2}$/)
           puts "#{index + 1}. Account with PIN ending with #{pin_digits[0]}"
         end
       when 3

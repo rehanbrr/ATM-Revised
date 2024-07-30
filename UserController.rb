@@ -17,14 +17,8 @@ module UserController
     @file_system.update_user_files(@user_data)
   end
 
-  def get_current_email
-    @user.email
-  end
-
   def change_password(password)
-    if @user
-      @user&.password = password
-    end
+    @user&.password = password
   end
 
   def create_user(name, email, password)
@@ -32,7 +26,8 @@ module UserController
   end
 
   def add_user(user)
-    @user_data = {user.email => user}
+    @user_data[user.email] = user
+    puts "added user: #{@user_data}"
   end
 
   def create_and_add_user(name, email, password)
@@ -40,7 +35,12 @@ module UserController
     add_user(user)
   end
 
+  def validate_user(user)
+    return true if !user.nil?
+  end
+
   def login_user(email, password)
     @user = @user_data[email] if @user_data.key?(email)
+    return @user if validate_user(@user)
   end
 end

@@ -16,7 +16,9 @@ class FileSystem
         user = User.new(user_params[0], user_params[1], user_params[2])
         @user_data[user.email] = user
       end
+
     else
+
       File.new(file_name, 'w+')
     end
 
@@ -24,27 +26,32 @@ class FileSystem
 
   def load_account_data
     file_name = 'accounts.csv'
-
+  
     if File.exist?(file_name)
       account_data = File.open(file_name, 'r').readlines
-      @account_data = []
-
-      for account_line in account_data
+      @account_data = {}
+  
+      account_data.each do |account_line|
         account_params = account_line.split(',')
-        account = Account.new(account_params[0], account_params[1], account[2])
-        @account_data[account.username] = account
+        account = Account.new(account_params[0], account_params[1])
+        account.balance = account_params[2]
+        
+        if @account_data.key?(account.email)
+          @account_data[account.email] << account
+        else
+          @account_data[account.email] = [account]
+        end
       end
     else
       File.new(file_name, 'w+')
     end
-
   end
-
+  
 
   def update_user_files(user_data)
     file_name = 'users.csv'
     user_file = File.open(file_name, 'w')
-    keys = user.data.keys
+    keys = user_data.keys
 
     for key in keys
       user = user_data[key]
@@ -57,9 +64,12 @@ class FileSystem
   def update_account_files(account_data)
     file_name = 'accounts.csv'
     account_file = File.open(file_name, 'w')
-    
-    for account in account_data
-      account_file.puts("#{account.pin},#{account.username},#{account.balance}")
+    keys = account_data.keys
+
+    for key in keys
+      for account in account_data[key]
+        account_file.puts("#{account.pin},#{account.email},#{account.balance}")
+      end
     end
 
     account_file.close
