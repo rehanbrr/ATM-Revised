@@ -12,10 +12,14 @@ class Machine
     start_menu
     puts 'Goodbye!'
   end
+
+  def close_app
+    store_user_data
+    store_account_data
+  end
   
   def get_user_params(option)
     valid_name = false
-    valid_username = false
     valid_email = false
     valid_password = false
 
@@ -27,7 +31,6 @@ class Machine
     email = nil
     password = nil
     name = nil
-    username = nil
 
     loop do
       if option == 'createuser'
@@ -60,31 +63,22 @@ class Machine
         next
       end
   
-      if option == 'createuser'
-        puts 'Enter username:'
-        username = gets.chomp
-        valid_username = !username_valid?(username)
-
-        if valid_username == false
-          puts 'Username has to be more than 3 letters and unique. Try again'
-          next
-        end
-
-      end
-  
-      break if break_condition(valid_name, valid_email, valid_password, valid_username, option)
+      puts valid_email
+      puts valid_name
+      puts valid_password
+      break if break_condition(valid_name, valid_email, valid_password, option)
     end
   
     if option == 'createuser'
-      return name, email, password, username
+      return name, email, password
     else
       return email, password
     end
   end
   
-  def break_condition(valid_name, valid_email, valid_password, valid_username, option)
+  def break_condition(valid_name, valid_email, valid_password, option)
     if option == 'createuser'
-      if(valid_name == true && valid_email == true && valid_password == true && valid_username == true)
+      if(valid_name == true && valid_email == true && valid_password == true)
         return true
       else
         return false
@@ -108,21 +102,27 @@ class Machine
   
       case choice
       when 1
-        name, email, password, username = get_user_params('createuser')
-        create_user(name, email, password, username)
+        name, email, password = get_user_params('createuser')
+        create_and_add_user(name, email, password)
       when 2
         email, password = get_user_params('login')
-        puts "Logged In!"  if login_user(email, password) == true
-        account_menu
+        user = user if login_user(email, password) == true
       when 3
-        update_files
+        close_app
+        break
       end
   
     end
   end
 
   def get_account_params
-    create_account
+    pin = ''
+    loop do
+      puts 'Enter PIN (4 Digits)'
+      pin = gets.chomp.to_i
+      
+      break if pin_valid?(pin)
+    end
   end
 
   def select_account_menu
@@ -135,9 +135,21 @@ class Machine
       choice = gets.chomp.to_i
 
       case choice
-      when 1
+      when 1 
+        pin, email = get_account_params
+        create_account(pin, email)
+      when 2
+        email = get_current_email
+        accounts = find_user_accounts(email)
 
+        accounts.each.with_index do |account, index|
+          pin_digits = pin.match(/\d{2}$/)
+          puts "#{index + 1}. Account with PIN ending with #{pin_digits[0]}"
+        end
+      when 3
+        break
       end
+
     end
 
   end

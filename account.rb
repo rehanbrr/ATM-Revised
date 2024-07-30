@@ -1,9 +1,9 @@
 class Account
-  attr_accessor :pin, :balance, :username
+  attr_accessor :pin, :balance, :email
 
-  def initialize(pin, username)
+  def initialize(pin, email)
     @pin = pin
-    @username = username
+    @email = email
     @balance = 0
   end
 end

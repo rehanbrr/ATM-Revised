@@ -8,36 +8,39 @@ module UserController
   def start_user_controller
     @file_system = FileSystem.new
     @file_system.load_user_data
+    @user_data = {}
     @user_data = @file_system.user_data
+    puts "this is user data loaded: #{@user_data}"
   end
 
-  def get_emails
-    @user_data.map do |user|
-      user.email
-    end
+  def store_user_data
+    @file_system.update_user_files(@user_data)
   end
 
-  def get_usernames
-    @user_data.map do |user|
-        user.username
-    end
+  def get_current_email
+    @user.email
   end
 
   def change_password(password)
     if @user
-      @user.password = password
+      @user&.password = password
     end
   end
 
-  def create_user(name, email, password, username)
-    user = User.new(name, email, password, username)
-    @user_data << user
+  def create_user(name, email, password)
+    User.new(name, email, password)
+  end
+
+  def add_user(user)
+    @user_data = {user.email => user}
+  end
+
+  def create_and_add_user(name, email, password)
+    user = create_user(name, email, password)
+    add_user(user)
   end
 
   def login_user(email, password)
-    puts "this is userdata #{@user_data}"
-    @user = @user_data.select {|user| user.email == email && user.password == password}
-    puts "this is #{@user}"
-    return true unless @user.nil?
+    @user = @user_data[email] if @user_data.key?(email)
   end
 end

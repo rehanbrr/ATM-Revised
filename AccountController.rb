@@ -11,14 +11,16 @@ module AccountController
     @account_data = @file_system.account_data
   end
 
-  def create_account(pin, username)
-    account = Account.new(pin, username)
+  def store_account_data
+    @file_system.update_account_files(@account_data)
+  end
+
+  def create_account(pin, email)
+    account = Account.new(pin, email)
     @account_data << account
   end
 
-  def find_user_accounts(username)
-    accounts = @account_data.select {|account| account.username == username}
-
-    return accounts
+  def find_user_accounts(email)
+    accounts = @account_data.select {|account| account.email == email}
   end
 end
