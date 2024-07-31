@@ -27,7 +27,6 @@ module UserController
 
   def add_user(user)
     @user_data[user.email] = user
-    puts "added user: #{@user_data}"
   end
 
   def create_and_add_user(name, email, password)

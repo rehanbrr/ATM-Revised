@@ -1,9 +1,9 @@
 module Validation
   def email_valid?(email)
-    if email.include?('@') && email.include?('.com') && !email.include?(',')
+    if email.include?('@') && email.include?('.com')
       return true if !@user_data.key?(email)
     end
-    
+
   end
   
   def password_valid?(password)
@@ -11,7 +11,7 @@ module Validation
   end
   
   def name_valid?(name)
-    name.length > 3 && !name.include?(',')
+    name.length > 3
   end
 
   def pin_valid?(pin)

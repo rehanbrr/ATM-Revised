@@ -24,7 +24,7 @@ class FileSystem
     return File.new(file_name, 'w+') if !File.exist?(file_name)
 
     account_data = CSV.open(file_name, 'r').readlines
-    puts "CSV data: #{account_data}"
+    puts "account CSV data: #{account_data}"
     @account_data = account_data.inject({}) do |hash, account_params|
       account = Account.new(account_params[0], account_params[1])
       account.balance = account_params[2]
@@ -59,6 +59,6 @@ class FileSystem
       end
     end
 
-    account_file.close
+    account_file.close()
   end
 end

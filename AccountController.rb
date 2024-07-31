@@ -21,22 +21,17 @@ module AccountController
   end
 
   def add_account(account)
-    if @account_data[account.email]
-      @account_data[account.email] << account
-    else
-      @account_data[account.email] = [account]
-    end
+    @account_data[account.email] ? @account_data[account.email] << account : @account_data[account.email] = [account]
   end
 
   def create_account_and_add(pin, email)
-    puts "pin in adding: #{pin}"
     account = create_account(pin, email)
     add_account(account)
   end
 
-  def validate_user(account)
+  def validate_user(pin, account)
     user_accounts = find_user_accounts(account.email)
-    user_accounts.select {|user_account| account.pin == user_account.pin}
+    user_accounts.find {|user_account| user_account.pin == pin}
   end
 
   def pin_existence?(pin, email)
@@ -46,5 +41,19 @@ module AccountController
 
   def find_user_accounts(email)
     accounts = @account_data[email]
+  end
+
+  def withdraw_money(account, amount)
+    amount > account.balance.to_i ? false : account.withdraw(amount)
+  end
+
+  def deposit_money(account, amount)
+    account.deposit(amount)
+  end
+
+  def delete_account(account)
+    user_accounts = find_user_accounts(account.email)
+    account_index = user_accounts.find_index {|user_account, index| user_account == account}
+    user_accounts.delete_at(account_index)
   end
 end

@@ -18,7 +18,7 @@ class Machine
     store_account_data
   end
   
-  def get_user_params(option)
+  def get_user_params(option) #will refactor this soon
     valid_name = false
     valid_email = false
     valid_password = false
@@ -91,12 +91,12 @@ class Machine
   end
   
   def start_menu
-    #choices = {1 => "Create Account", 2 => "Login", 3 => "Exit"}
+    choices = {1 => "1. Create Account", 2 => "2. Login", 3 => "3. Exit"}
 
     loop do
-        puts '1. Create User'
+        puts "\n\n1. Create User"
         puts '2. Login'
-        puts '3. Exit'
+        puts '0. Exit'
   
       choice = gets.chomp.to_i
   
@@ -110,7 +110,7 @@ class Machine
 
         puts 'Login credentials incorrect' if !@user
         select_account_menu if @user
-      when 3
+      when 0
         close_app
         break
       end
@@ -118,8 +118,44 @@ class Machine
     end
   end
 
+  def get_balance(account)
+    puts "Balance is: #{account.balance}"
+  end
+
   def view_account_details(account)
-    puts "\n\nAccount details for #{account.pin}"
+    loop do
+      puts "\n\nAccount details for #{account.pin}"
+      puts "1. Check Balance"
+      puts "2. Withdraw Money"
+      puts "3. Deposit Money"
+      puts "4. Send Money"
+      puts "5. Delete this account"
+      puts "0. Exit"
+
+      choice = gets.chomp.to_i
+
+      case choice
+      when 1
+        get_balance(account)
+      when 2
+        puts 'Enter amount'
+        amount = gets.chomp.to_i
+        puts 'Insufficient Balance' if !withdraw_money(account, amount)
+        get_balance(account)
+      when 3
+        puts 'Enter amount'
+        amount = gets.chomp.to_i
+        deposit_money(account, amount)
+        get_balance(account)
+      when 4
+
+      when 5
+        puts 'Account Deleted!' if delete_account(account)
+        break
+      when 0
+        break
+      end
+    end
   end
 
   def view_accounts
@@ -142,21 +178,25 @@ class Machine
       when -1
         break
       else
+        puts 'Enter PIN for account'
+        pin = gets.chomp
         account = accounts[choice]
-        account_valid = validate_user(account)
-        puts "Incorrect PIN" if !account_valid
-        view_account_details(account) if account_valid
+        if account.pin == pin
+          view_account_details(account)
+        else
+          puts 'Incorrect PIN'
+        end        
       end
     end
   end
 
   def select_account_menu
-    
     loop do
       puts "\n\nChoose an option: "
       puts '1. Create Account'
       puts '2. View Accounts'
-      puts '3. Logout'
+      puts '3. Change Password'
+      puts '0. Logout'
 
       choice = gets.chomp.to_i
 
@@ -167,6 +207,8 @@ class Machine
       when 2
         view_accounts
       when 3
+        
+      when 0
         break
       end
 
