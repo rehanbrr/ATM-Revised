@@ -1,6 +1,14 @@
 require_relative 'UserController'
 require_relative 'AccountController'
 
+CREATE_USER = 'create_user'
+ALERT = {'email' => 'Email has to be unique and should contain .com and @. Try again',
+        'password' => 'Password should me more than 8 character. Should contain numbers. Try again',
+        'name' => 'Name should be more than 3 letters. Try again',
+        'insufficient' => 'Insufficient Balance',
+        'incorrect_login' => 'Login credentials incorrect!',
+        'no_account' => 'No accounts available'}
+
 class Machine
   include UserController
   include AccountController
@@ -22,60 +30,73 @@ class Machine
     valid_name = false
     valid_email = false
     valid_password = false
-
-    if option == 'login'
-      valid_email = true
-      valid_password = true
-    end
-  
     email = nil
     password = nil
     name = nil
 
     loop do
-      if option == 'createuser'
+      if option == CREATE_USER
         puts 'Enter name:'
         name = gets.chomp
         valid_name = name_valid?(name)
 
         if valid_name != true
-          puts 'Name should be more than 3 letters. Try again'
+          puts ALERT['name']
           next
         end
-
       end
   
       puts 'Enter email:'
       email = gets.chomp
-      valid_email = email_valid?(email) if option == 'createuser'
+      option == CREATE_USER ? valid_email = email_valid?(email) : valid_email = true
 
       if valid_email != true
-        puts 'Email has to be unique and should contain .com and @. Try again'
+        puts ALERT['email']
         next
       end
   
       puts 'Enter password:'
       password = gets.chomp
-      valid_password = password_valid?(password)
+      option == CREATE_USER ? valid_password = password_valid?(password) : valid_password = true
 
       if valid_password != true
-        puts 'Password should me more than 8 character. Should contain numbers. Try again'
+        puts ALERT['password']
         next
       end
 
       validity = check_validitiy(valid_name, valid_email, valid_password)
-      break if break_condition(validity, option)
+      break if option == CREATE_USER && validity || option != CREATE_USER
     end
   
-    option == 'createuser' ? [name, email, password] : [email, password]
+    option == CREATE_USER ? [name, email, password] : [email, password]
   end
 
   def check_validitiy(valid_name, valid_email, valid_password)
     valid_name == true && valid_email == true && valid_password == true
   end
-  
-  def break_condition(validity, option)
-    return option == 'createuser' && validity || option == 'login'
+
+  def password_change(user)
+    puts 'Enter current password'
+    current_password = get.chomp
+    valid_password = false
+    password_check(user, current_password)
+
+    if password_check
+      loop do
+        puts 'Enter new password:'
+        new_password = gets.chomp
+        valid_password = password_valid?(password)
+
+        if valid_password != true
+          puts ALERT['password']
+          next
+        end
+
+        change_password(new_password)
+        puts 'Password changed!'
+        break
+      end
+    end
   end
 
   def get_account_params
@@ -89,9 +110,53 @@ class Machine
 
     pin
   end
+
+  def get_balance(account)
+    puts "\nBalance is: #{account.balance}"
+  end
+
+  def list_accounts(accounts)
+    accounts.each_with_index do |account, index|
+      account_digits = account.account_number.match(/\d{3}$/)
+      puts "#{index + 1}. Account number ending with #{account_digits[0]}"
+    end
+    puts "0. Exit Menu"
+
+    gets.chomp.to_i - 1
+  end
+
+  def sending_money(recipient, sender_account)
+    recipient_accounts = find_user_accounts(recipient.email)
+    return puts(ALERT['no_account']) if recipient_accounts.empty?
+    
+    amount = get_amount
+    loop do
+      choice = list_accounts(recipient_accounts)
+      next if choice > recipient_accounts.size
+
+      case choice
+      when -1
+        break
+      else
+        account = recipient_accounts[choice]       
+        if !withdraw_money(sender_account, amount)
+          puts ALERT['insufficient']
+          next
+        else
+          deposit_money(account, amount)
+          break
+        end
+      end
+    end
+  end
+
+  def get_amount
+    puts 'Enter Amount'
+    gets.chomp.to_i
+  end
   
   def start_menu
-    choices = {1 => "1. Create Account", 2 => "2. Login", 3 => "3. Exit"}
+    #choices = {1 => "1. Create Account", 2 => "2. Login", 3 => "3. Exit"}
 
     loop do
         puts "\n\n1. Create User"
@@ -102,13 +167,13 @@ class Machine
   
       case choice
       when 1
-        name, email, password = get_user_params('createuser')
+        name, email, password = get_user_params('create_user')
         create_and_add_user(name, email, password)
       when 2
         email, password = get_user_params('login')
         @user = login_user(email, password)
 
-        puts 'Login credentials incorrect' if !@user
+        puts ALERT['incorrect_login'] if !@user
         select_account_menu if @user
       when 0
         close_app
@@ -118,13 +183,9 @@ class Machine
     end
   end
 
-  def get_balance(account)
-    puts "Balance is: #{account.balance}"
-  end
-
   def view_account_details(account)
     loop do
-      puts "\n\nAccount details for #{account.pin}"
+      puts "\n\nAccount details for #{account.account_number}"
       puts "1. Check Balance"
       puts "2. Withdraw Money"
       puts "3. Deposit Money"
@@ -138,17 +199,18 @@ class Machine
       when 1
         get_balance(account)
       when 2
-        puts 'Enter amount'
-        amount = gets.chomp.to_i
-        puts 'Insufficient Balance' if !withdraw_money(account, amount)
+        amount = get_amount
+        puts ALERT['insufficient'] if !withdraw_money(account, amount)
         get_balance(account)
       when 3
-        puts 'Enter amount'
-        amount = gets.chomp.to_i
+        amount = get_amount
         deposit_money(account, amount)
         get_balance(account)
       when 4
-
+        puts "Enter recipient's email:"
+        email = gets.chomp
+        user = find_user(email)
+        user ? sending_money(user, account) : puts('User not found')
       when 5
         puts 'Account Deleted!' if delete_account(account)
         break
@@ -159,19 +221,12 @@ class Machine
   end
 
   def view_accounts
-    puts "\n\nAccount List"
     accounts = find_user_accounts(@user.email)
-    return puts "No accounts available" if !accounts
+    return puts ALERT['no_account'] if !accounts
 
     loop do
-      accounts.each.with_index do |account, index|
-        pin_digits = account.pin.match(/\d{2}$/)
-        puts "#{index + 1}. Account with PIN ending with #{pin_digits[0]}"
-      end
-      puts "0. Exit Menu"
-
-      choice = gets.chomp.to_i - 1
-
+      puts "\n\nAccount List"
+      choice = list_accounts(accounts)
       next if choice > accounts.size
 
       case choice
@@ -184,7 +239,7 @@ class Machine
         if account.pin == pin
           view_account_details(account)
         else
-          puts 'Incorrect PIN'
+          puts "\nIncorrect PIN"
         end        
       end
     end
@@ -203,11 +258,11 @@ class Machine
       case choice
       when 1 
         pin = get_account_params
-        create_account_and_add(pin, @user.email) if !pin_existence?(pin, @user.email)
+        puts "Account Created!" if create_account_and_add(pin, @user.email)
       when 2
         view_accounts
       when 3
-        
+        password_change(@user)
       when 0
         break
       end

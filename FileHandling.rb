@@ -3,7 +3,7 @@ require_relative 'account'
 require 'CSV'
 class FileSystem
 
-  attr_accessor :user_data, :account_data
+  attr_accessor :user_data, :account_data, :account_numbers
 
   def load_user_data
     file_name = 'users.csv'
@@ -22,14 +22,15 @@ class FileSystem
   def load_account_data
     file_name = 'accounts.csv'
     return File.new(file_name, 'w+') if !File.exist?(file_name)
-
+    @account_numbers = []
     account_data = CSV.open(file_name, 'r').readlines
     puts "account CSV data: #{account_data}"
     @account_data = account_data.inject({}) do |hash, account_params|
-      account = Account.new(account_params[0], account_params[1])
-      account.balance = account_params[2]
+      account = Account.new(account_params[0], account_params[1], account_params[2])
+      account.balance = account_params[3]
       hash[account.email] ||= []
       hash[account.email] << account
+      @account_numbers << account_params[0]
       hash
     end
   end
@@ -55,7 +56,7 @@ class FileSystem
 
     for key in keys
       for account in account_data[key]
-        account_file.puts("#{account.pin},#{account.email},#{account.balance}")
+        account_file.puts("#{account.account_number},#{account.pin},#{account.email},#{account.balance}")
       end
     end
 

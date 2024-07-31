@@ -29,12 +29,20 @@ module UserController
     @user_data[user.email] = user
   end
 
+  def password_check(user, password)
+    @user_data[user.email].password == password
+  end
+
+  def find_user(email)
+    user = @user_data[email]
+  end
+
   def create_and_add_user(name, email, password)
     user = create_user(name, email, password)
     add_user(user)
   end
 
   def login_user(email, password)
-    @user = @user_data[email] if @user_data[email].password == password
+    @user_data[email] if @user_data[email].password == password
   end
 end

@@ -1,7 +1,8 @@
 class Account
-  attr_accessor :pin, :balance, :email
+  attr_accessor :pin, :balance, :email, :account_number
 
-  def initialize(pin, email)
+  def initialize(account_number, pin, email)
+    @account_number = account_number
     @pin = pin
     @email = email
     @balance = 0
