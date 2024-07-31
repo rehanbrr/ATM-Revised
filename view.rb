@@ -77,15 +77,14 @@ class Machine
 
   def password_change(user)
     puts 'Enter current password'
-    current_password = get.chomp
+    current_password = gets.chomp
     valid_password = false
-    password_check(user, current_password)
 
-    if password_check
+    if password_check(user, current_password)
       loop do
         puts 'Enter new password:'
         new_password = gets.chomp
-        valid_password = password_valid?(password)
+        valid_password = password_valid?(new_password)
 
         if valid_password != true
           puts ALERT['password']
