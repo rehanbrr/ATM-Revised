@@ -1,13 +1,16 @@
 require_relative 'UserController'
 require_relative 'AccountController'
 
-CREATE_USER = 'create_user'
 ALERT = {'email' => 'Email has to be unique and should contain .com and @. Try again',
         'password' => 'Password should me more than 8 character. Should contain numbers. Try again',
         'name' => 'Name should be more than 3 letters. Try again',
         'insufficient' => 'Insufficient Balance',
         'incorrect_login' => 'Login credentials incorrect!',
         'no_account' => 'No accounts available'}
+
+CHOICE = {'EXIT_LIST' => -1, 'EXIT' => 0, 'CREATE_USER' => 1, 'LOGIN' => 2, 
+          'CREATE_ACCOUNT' => 1, 'VIEW_ACCOUNTS' => 2, 'CHANGE_PASSWORD' => 3,
+          'CHECK_BALANCE' => 1, 'WITHDRAW' => 2, 'DEPOSIT' => 3, 'SEND_MONEY' => 4, 'DELETE_ACCOUNT' => 5}
 
 class Machine
   include UserController
@@ -25,54 +28,48 @@ class Machine
     store_user_data
     store_account_data
   end
-  
-  def get_user_params(option) #will refactor this soon
-    valid_name = false
-    valid_email = false
-    valid_password = false
+
+  def get_login_params
+    puts 'Enter email:'
+    email = gets.chomp
+
+    puts 'Enter password:'
+    password = gets.chomp
+
+    return email, password
+  end
+
+  def get_create_params
     email = nil
     password = nil
     name = nil
 
     loop do
-      if option == CREATE_USER
-        puts 'Enter name:'
-        name = gets.chomp
-        valid_name = name_valid?(name)
-
-        if valid_name != true
-          puts ALERT['name']
-          next
-        end
+      puts 'Enter name:'
+      name = gets.chomp
+      unless name_valid?(name)
+        puts ALERT['name']
+        next
       end
-  
+
       puts 'Enter email:'
       email = gets.chomp
-      option == CREATE_USER ? valid_email = email_valid?(email) : valid_email = true
-
-      if valid_email != true
+      unless email_valid?(email)
         puts ALERT['email']
         next
       end
-  
+
       puts 'Enter password:'
       password = gets.chomp
-      option == CREATE_USER ? valid_password = password_valid?(password) : valid_password = true
-
-      if valid_password != true
+      unless password_valid?(password)
         puts ALERT['password']
         next
       end
 
-      validity = check_validitiy(valid_name, valid_email, valid_password)
-      break if option == CREATE_USER && validity || option != CREATE_USER
+      break
     end
-  
-    option == CREATE_USER ? [name, email, password] : [email, password]
-  end
 
-  def check_validitiy(valid_name, valid_email, valid_password)
-    valid_name == true && valid_email == true && valid_password == true
+    return name, email, password
   end
 
   def password_change(user)
@@ -86,7 +83,7 @@ class Machine
         new_password = gets.chomp
         valid_password = password_valid?(new_password)
 
-        if valid_password != true
+        unless valid_password == true
           puts ALERT['password']
           next
         end
@@ -103,7 +100,6 @@ class Machine
     loop do
       puts 'Enter PIN (4 Digits)'
       pin = gets.chomp
-      
       break if pin_valid?(pin)
     end
 
@@ -129,16 +125,18 @@ class Machine
     return puts(ALERT['no_account']) if recipient_accounts.empty?
     
     amount = get_amount
+    puts "Total Amount: #{amount}"
     loop do
       choice = list_accounts(recipient_accounts)
       next if choice > recipient_accounts.size
 
       case choice
-      when -1
+      when CHOICE['EXIT_LIST']
         break
       else
-        account = recipient_accounts[choice]       
-        if !withdraw_money(sender_account, amount)
+        account = recipient_accounts[choice]
+        puts "Acoount detals: #{account}"
+        unless withdraw_money(sender_account, amount)
           puts ALERT['insufficient']
           next
         else
@@ -155,8 +153,6 @@ class Machine
   end
   
   def start_menu
-    #choices = {1 => "1. Create Account", 2 => "2. Login", 3 => "3. Exit"}
-
     loop do
         puts "\n\n1. Create User"
         puts '2. Login'
@@ -165,20 +161,17 @@ class Machine
       choice = gets.chomp.to_i
   
       case choice
-      when 1
-        name, email, password = get_user_params('create_user')
+      when CHOICE['CREATE_USER']
+        name, email, password = get_create_params()
         create_and_add_user(name, email, password)
-      when 2
-        email, password = get_user_params('login')
+      when CHOICE['LOGIN']
+        email, password = get_login_params()
         @user = login_user(email, password)
-
-        puts ALERT['incorrect_login'] if !@user
-        select_account_menu if @user
-      when 0
+        @user ? select_account_menu : puts(ALERT['incorrect_login'])
+      when CHOICE['EXIT']
         close_app
         break
       end
-  
     end
   end
 
@@ -195,25 +188,25 @@ class Machine
       choice = gets.chomp.to_i
 
       case choice
-      when 1
+      when CHOICE['GET_BALANCE']
         get_balance(account)
-      when 2
+      when CHOICE['WITHDRAW']
         amount = get_amount
-        puts ALERT['insufficient'] if !withdraw_money(account, amount)
+        puts ALERT['insufficient'] unless withdraw_money(account, amount)
         get_balance(account)
-      when 3
+      when CHOICE['DEPOSIT']
         amount = get_amount
         deposit_money(account, amount)
         get_balance(account)
-      when 4
+      when CHOICE['SEND_MONEY']
         puts "Enter recipient's email:"
         email = gets.chomp
         user = find_user(email)
         user ? sending_money(user, account) : puts('User not found')
-      when 5
+      when CHOICE['DELETE_ACCOUNT']
         puts 'Account Deleted!' if delete_account(account)
         break
-      when 0
+      when CHOICE['EXIT']
         break
       end
     end
@@ -229,7 +222,7 @@ class Machine
       next if choice > accounts.size
 
       case choice
-      when -1
+      when CHOICE['EXIT_LIST']
         break
       else
         puts 'Enter PIN for account'
@@ -255,18 +248,16 @@ class Machine
       choice = gets.chomp.to_i
 
       case choice
-      when 1 
+      when CHOICE['CREATE_ACCOUNT']
         pin = get_account_params
         puts "Account Created!" if create_account_and_add(pin, @user.email)
-      when 2
+      when CHOICE['VIEW_ACCOUNTS']
         view_accounts
-      when 3
+      when CHOICE['CHANGE_PASSWORD']
         password_change(@user)
-      when 0
+      when CHOICE['EXIT']
         break
       end
-
     end
-
   end
 end

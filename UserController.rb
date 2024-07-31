@@ -34,7 +34,7 @@ module UserController
   end
 
   def find_user(email)
-    user = @user_data[email]
+    @user_data[email]
   end
 
   def create_and_add_user(name, email, password)

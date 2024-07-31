@@ -22,21 +22,21 @@ module AccountController
   end
 
   def add_account(account)
-    @account_data[account.email] ? @account_data[account.email] << account : @account_data[account.email] = [account]
+    @account_data[account.email] ||= []
+    @account_data[account.email] << account
   end
 
   def generate_account_number
     account_number = 0
     loop do
       account_number = rand(10000...99999).to_s
-      break if !@account_numbers.include?(account_number)
+      break unless @account_numbers.include?(account_number)
     end
     account_number
   end
 
   def create_account_and_add(pin, email)
-    account_number = generate_account_number
-    account = create_account(account_number, pin, email)
+    account = create_account(generate_account_number, pin, email)
     add_account(account)
   end
 
@@ -46,11 +46,12 @@ module AccountController
   end
 
   def find_user_accounts(email)
-    accounts = @account_data[email]
+    @account_data[email]
   end
 
   def withdraw_money(account, amount)
-    amount > account.balance.to_i ? false : account.withdraw(amount)
+    return if amount > account.balance.to_i
+    account.withdraw(amount) 
   end
 
   def deposit_money(account, amount)
@@ -59,7 +60,6 @@ module AccountController
 
   def delete_account(account)
     user_accounts = find_user_accounts(account.email)
-    account_index = user_accounts.find_index {|user_account, index| user_account == account}
-    user_accounts.delete_at(account_index)
+    user_accounts.delete_if {|user_account| user_account == account}
   end
 end

@@ -8,10 +8,9 @@ class FileSystem
   def load_user_data
     file_name = 'users.csv'
     return File.new(file_name, 'w+') if !File.exist?(file_name)
-
     user_data = CSV.open(file_name, 'r').readlines
-    puts "user data csv: #{user_data}"
-    @user_data = user_data.inject({}) do |hash, user_params|
+
+    @user_data = user_data.each_with_object({}) do |user_params, hash|
       user = User.new(user_params[0], user_params[1], user_params[2])
       hash[user.email] = user
       hash
@@ -24,8 +23,8 @@ class FileSystem
     return File.new(file_name, 'w+') if !File.exist?(file_name)
     @account_numbers = []
     account_data = CSV.open(file_name, 'r').readlines
-    puts "account CSV data: #{account_data}"
-    @account_data = account_data.inject({}) do |hash, account_params|
+
+    @account_data = account_data.each_with_object({}) do |account_params, hash|
       account = Account.new(account_params[0], account_params[1], account_params[2])
       account.balance = account_params[3]
       hash[account.email] ||= []
